@@ -173,12 +173,12 @@ struct rate_burst {
 
 
 /*!
- * \brief The convex_curve is a base_curve formed by
+ * \brief The concave_curve is a base_curve formed by
  *  a sequence of rays ordered by decreasing slopes.
  *
  * Concave curves are build from either:
  *  - list of rays (which is similar to base curve), or
- *  - list of rate-burst pairs (which is a unique feature of convex_curve).
+ *  - list of rate-burst pairs (which is a unique feature of concave_curve).
  *
  * Elements (R,B) of a valid rate-burst pair
  *  shall belong to the following domain:
@@ -187,12 +187,8 @@ struct rate_burst {
  * Pair (R,B) corresponds to a bi-segment curve:
  *  - the first one starts at origin and coinsides with 0Y axis;
  *  - the second one starts at (0,B) and has a slope equal to R.
- * *
- * Elements (R,L) of a valid rate-latency pair
- *  shall belong to the following domain:
- *  0 < R <= inf && 0 <= L < inf
  *
- * Concave curve specified by a set of rate-latency pairs
+ * Concave curve specified by a set of rate-burst pairs
  *  corresponds to a point-wise minimum among their curves.
  */
 class concave_curve : public base_curve {
@@ -315,7 +311,7 @@ void base_curve::validate_ray_list(InputIt first, InputIt last) {
 
 	// check restrictions on size and front side
 	if (first == last) throw std::runtime_error("ray list is empty");
-	if (first->p.x != 0.0 || first->p.y != 0.0) throw std::runtime_error("curse is not causal");
+	if (first->p.x != 0.0 || first->p.y != 0.0) throw std::runtime_error("curve is not causal");
 
 	// check restrictions to pairs of adjustent rays
 	for(auto prev = first++; first != last; prev = first++) {
@@ -344,7 +340,7 @@ void convex_curve::validate_ray_list(InputIt first, InputIt last) {
 
 	// check restrictions on size and front side
 	if (first == last) throw std::runtime_error("ray list is empty");
-	if (first->p.x != 0.0 || first->p.y != 0.0) throw std::runtime_error("curse is not causal");
+	if (first->p.x != 0.0 || first->p.y != 0.0) throw std::runtime_error("curve is not causal");
 
 	// check restrictions to pairs of adjustent rays
 	for(auto prev = first++; first != last; prev = first++) {
@@ -404,7 +400,7 @@ OutputIt convex_curve::copy_rate_latency_list(OutputIt it) const {
 	auto ray_it = rays.cbegin(), ray_end = rays.cend();
 	if (ray_it->k == 1.0/0.0) ++ray_it;
 	for(; ray_it != ray_end; ++ray_it) {
-		double latency = ray_it->p.x - ray_it->p.y * ray_it->k;
+		double latency = ray_it->p.x - ray_it->p.y / ray_it->k;
 		*it++ = {ray_it->k, latency};
 	}
 	return it;
@@ -420,7 +416,7 @@ void concave_curve::validate_ray_list(InputIt first, InputIt last) {
 
 	// check restrictions on size and front side
 	if (first == last) throw std::runtime_error("ray list is empty");
-	if (first->p.x != 0.0 || first->p.y != 0.0) throw std::runtime_error("curse is not causal");
+	if (first->p.x != 0.0 || first->p.y != 0.0) throw std::runtime_error("curve is not causal");
 
 	// check restrictions to pairs of adjustent rays
 	for(auto prev = first++; first != last; prev = first++) {
@@ -480,7 +476,7 @@ OutputIt concave_curve::copy_rate_burst_list(OutputIt it) const {
 	auto ray_it = rays.cbegin(), ray_end = rays.cend();
 	if (ray_it->k == 0.0) ++ray_it;
 	for(; ray_it != ray_end; ++ray_it) {
-		double burst = ray_it->p.y - ray_it->p.x / ray_it->k;
+		double burst = ray_it->p.y - ray_it->p.x * ray_it->k;
 		*it++ = {ray_it->k, burst};
 	}
 	return it;
